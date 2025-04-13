@@ -1,0 +1,58 @@
+[
+  {
+    "username": "Piyush Makkar",
+    "email": "piyushmakkar98@gmail.com",
+    "password": "Piyush@123",
+    "expenses": [
+      {
+        "id": 1,
+        "productName": "Coffee",
+        "category": "Food",
+        "date": "2005-03-06",
+        "amount": 120
+      },
+      {
+        "id": 2,
+        "productName": "Patty",
+        "category": "Food",
+        "date": "2005-03-06",
+        "amount": 25
+      },
+      {
+        "id": 3,
+        "productName": "chai",
+        "category": "Food",
+        "date": "2005-05-01",
+        "amount": 599
+      }
+    ]
+  },
+  {
+    "username": "Testing",
+    "email": "test@gmail.com",
+    "password": "Piyush@123",
+    "expenses": [
+      {
+        "id": 1,
+        "productName": "potty",
+        "category": "Entertainment",
+        "date": "2005-05-01",
+        "amount": 599
+      }
+    ]
+  },
+  {
+    "username": "aaina Kaushik",
+    "email": "aaina@gmail.com",
+    "password": "aaina123",
+    "expenses": [
+      {
+        "id": 1,
+        "productName": "Chai",
+        "category": "Food",
+        "date": "2025-03-06",
+        "amount": 50
+      }
+    ]
+  }
+]

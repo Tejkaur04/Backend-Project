@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page</title>
+    <style>
+        *{
+            margin: 0;
+        }
+        .body-container{
+            height: 100vh;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.847);
+            display: flex;
+        }
+        .left-side{
+            height: 90vh;
+            width: 20%;
+            /* background-color: red; */
+            border-right: 1px solid rgba(192, 192, 192, 0.477);
+            padding-top: 5vh;
+            padding-bottom: 5vh;
+        }
+        .right-side{
+            height: 80vh;
+            width: 80%;
+            background-color: black;
+            margin: 5vh;
+            border-radius: 7px;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 5vh;
+        }
+        .image-container{
+            height: 15vh;
+            width: 15vh;
+            /* background-color: red; */
+            margin-top: 2vh;
+            border-radius: 50%;
+            
+        }
+        .image-container img{
+            height: 15vh;
+            width: 15vh;
+        }
+        .user{
+            color: white;
+            font-size: medium;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin-top: 1vh;
+            text-transform: capitalize;
+            font-weight: 500;
+            margin-bottom: 8vh;
+        }
+        .box{
+            width: 80%;
+            height: 9vh;
+            border-radius: 7px;
+            margin-top: 2vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        a{
+            color: white;
+            text-decoration: none;
+        }
+        label{
+            display: block;
+            width: 15%;
+        }
+        input{
+            background-color: rgb(75, 75, 75);
+            border: 0;
+            outline: 0;
+            height: 7vh;
+            width: 45%;
+            border-radius: 7px;
+            padding: 5px;
+            font-size: medium ;
+            color: black;
+        }
+        .input-group{
+            display: flex;
+            margin-top: 5vh;
+        }
+        select{
+            background-color: rgb(75, 75, 75);
+            border: 0;
+            outline: 0;
+            border-radius: 7px;
+            padding: 5px;
+            width: 15%;
+            height: 7vh;
+        }
+        button{
+            width: 60%;
+            height: 8vh;
+            margin-top: 8vh;
+            border: 0;
+            outline: 0;
+            background-color: white;
+            border-radius: 7px;
+            color: black;
+        }
+        h2{
+            font-size: x-large;
+            margin-bottom: 2vh;
+            text-transform: capitalize;
+        }
+        h2 input {
+            background-color: black;
+            width: min-content;
+        }
+    </style>
+</head>
+<body>
+    <div class="body-container">
+        <div class="left-side">
+            <center>
+                <div class="image-container">
+                    <img src="/user.png" alt="">
+                </div>
+                <p class="user" > <%= username %> </p>
+            </center>
+            <center>
+                <div class="box"  >
+                    <a href="http://localhost:3000/home">Home</a>
+                </div>
+                <div class="box" style="background-color: rgba(87, 87, 87, 0.377);" >
+                    <a href="http://localhost:3000/expenses">Expenses</a>
+                </div>
+                <div class="box">
+                    <a href="#">Settings</a>
+                </div>
+            </center>
+        </div>
+        <div class="right-side">
+            <form action="/expenses" method="POST">
+            <h2>Add Expense  <input type="text" name="username" id="username" value="<%= username %>" readonly > </h2>
+            <hr>
+                <div class="input-group">
+                    <label for="productName">Product Name:</label>
+                    <input type="text" id="productName" name="productName" required>
+                </div>
+            
+                <div class="input-group">
+                    <label for="category">Category:</label>
+                    <select id="category" name="category" required>
+                        <option value="Food">Food</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Bills">Bills</option>
+                        <option value="Entertainment">Entertainment</option>
+                    </select>
+                </div>
+            
+                <div class="input-group">
+                    <label for="date">Date:</label>
+                    <input type="date" id="date" name="date" required>
+                </div>
+            
+                <div class="input-group">
+                    <label for="amount">Money Spent (₹):</label>
+                    <input type="number" id="amount" name="amount" required min="1">
+                </div>
+            
+                <button type="submit">Add Expense</button>
+            </form>
+            
+        </div>
+    </div>
+</body>
+</html>
