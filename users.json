@@ -54,5 +54,26 @@
         "amount": 50
       }
     ]
+  },
+  {
+    "username": "Tejinder",
+    "email": "tejinder@gmail.com",
+    "password": "password",
+    "expenses": [
+      {
+        "id": 1,
+        "productName": "Peri Peri Fries",
+        "category": "Food",
+        "date": "2025-04-13",
+        "amount": 119
+      },
+      {
+        "id": 2,
+        "productName": "Cold Coffee",
+        "category": "Food",
+        "date": "2025-04-11",
+        "amount": 110
+      }
+    ]
   }
 ]

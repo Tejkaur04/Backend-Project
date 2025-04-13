@@ -1,53 +1,53 @@
 const express = require('express');
 const app = express();
 const fs = require('fs');
+const cookieParser = require('cookie-parser');
 
-app.set("view engine","ejs");
-app.use(express.urlencoded({extended:true}));
+app.set("view engine", "ejs");
+
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-
 app.use(express.static('public'));
 
 const dataFile = "users.json";
-let userLoggedIn = 0;
-let username = "User";
 
 function loadUserData() {
     if (fs.existsSync(dataFile)) {
         try {
             const data = fs.readFileSync(dataFile, "utf8");
-            return data ? JSON.parse(data) : []; 
+            return data ? JSON.parse(data) : [];
         } catch (error) {
             console.error("Error reading JSON file:", error);
-            return []; 
+            return [];
         }
     }
-    return []; 
+    return [];
 }
 
-app.get("/",(req,res)=>{
-    res.render("login",{message:null});
-})
+app.get("/", (req, res) => {
+    res.render("login", { message: null });
+});
 
-app.post("/",(req,res)=>{
+app.post("/", (req, res) => {
     const { email, password } = req.body;
     let users = loadUserData();
     const user = users.find(user => user.email === email && user.password === password);
 
-
     if (user) {
-        username = user.username;
-        userLoggedIn = 1;
-        res.redirect("http://localhost:3000/home");
+        res.cookie("user", user.username, {
+            httpOnly: true,
+            maxAge: 24 * 60 * 60 * 1000, // 1 day
+        });
+        res.redirect("/home");
     } else {
         res.render("login", { message: "Email or Password is incorrect. Try again" });
-        userLoggedIn = 0;
     }
 });
 
-app.get("/signup",(req,res)=>{
-    res.render("signup",{message:null});
-})
+app.get("/signup", (req, res) => {
+    res.render("signup", { message: null });
+});
 
 app.post("/signup", (req, res) => {
     const { username, email, password } = req.body;
@@ -60,40 +60,42 @@ app.post("/signup", (req, res) => {
     } else {
         users.push({ username, email, password });
         fs.writeFileSync(dataFile, JSON.stringify(users, null, 2));
-
         res.render("login", { message: "Account registration successful! Please login." });
     }
 });
 
-app.get("/home",(req,res)=>{
-    if(userLoggedIn){
+app.get("/home", (req, res) => {
+    const username = req.cookies.user;
+
+    if (username) {
         let users = loadUserData();
         let user = users.find(user => user.username === username);
-    
+
         if (!user || !user.expenses) {
             user.expenses = [];
         }
-        res.render("home",{username, expenses: user.expenses});
-    }
-    else{
-        res.render("login",{message: "Please login first."});
-    }
-})
 
-app.get("/expenses",(req,res)=>{
-    if(userLoggedIn){
-        res.render("expenses",{username});
+        res.render("home", { username, expenses: user.expenses });
+    } else {
+        res.render("login", { message: "Please login first." });
     }
-    else{
-        res.render("login",{message: "Please login first."});
-    }
-})
+});
 
-app.post("/expenses",(req,res)=>{
-    const { username, productName, category, date, amount } = req.body;
-    console.log(username + " " + productName + " " + category + " " + date + " " + amount);
+app.get("/expenses", (req, res) => {
+    const username = req.cookies.user;
+
+    if (username) {
+        res.render("expenses", { username });
+    } else {
+        res.render("login", { message: "Please login first." });
+    }
+});
+
+app.post("/expenses", (req, res) => {
+    const { productName, category, date, amount } = req.body;
+    const username = req.cookies.user;
+
     let users = loadUserData();
-
     let user = users.find(user => user.username === username);
 
     if (!user) {
@@ -105,7 +107,7 @@ app.post("/expenses",(req,res)=>{
     }
 
     const newExpense = {
-        id: user.expenses.length + 1,  
+        id: user.expenses.length + 1,
         productName,
         category,
         date,
@@ -115,11 +117,14 @@ app.post("/expenses",(req,res)=>{
     user.expenses.push(newExpense);
     fs.writeFileSync(dataFile, JSON.stringify(users, null, 2));
 
-    res.redirect("http://localhost:3000/expenses");
-    userLoggedIn = 1;
-})
+    res.redirect("/expenses");
+});
 
+app.get("/logout", (req, res) => {
+    res.clearCookie("user");
+    res.redirect("/");
+});
 
-app.listen(3000,(req,res)=>{
+app.listen(3000, () => {
     console.log("Server running on port 3000.");
 });
