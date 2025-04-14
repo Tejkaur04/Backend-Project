@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ErRoR</title>
+    <style>
+        *{
+            margin: 0;
+        }
+        .body-container{
+            height: 100vh;
+            width: 100%;
+            /* background-color: black; */
+            display: flex;
+        }
+        .box1{
+            height: 100vh;
+            width: 50%;
+            /* background-color: red; */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .box2{
+            height: 100vh;
+            width: 50%;
+            /* background-color: black; */
+            display: flex;
+            /* justify-content: center; */
+            align-items: center;
+            font-size:xx-large;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="body-container">
+        <div class="box1">
+            <img src="error.jpg" alt="">
+        </div>
+        <div class="box2">
+            Error: <%= code %>
+            <br>
+            <%= url %>
+            <%= reason %>
+        </div>
+    </div>
+</body>
+</html>
