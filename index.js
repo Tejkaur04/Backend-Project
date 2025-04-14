@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const fs = require('fs');
 const cookieParser = require('cookie-parser');
+const morgan = require('morgan');
+
 
 app.set("view engine", "ejs");
 
@@ -9,6 +11,7 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
+app.use(morgan('dev'));
 
 const dataFile = "users.json";
 
@@ -309,6 +312,18 @@ app.get("/logout", (req, res) => {
     res.clearCookie("user");
     res.redirect("/");
 });
+
+// error handling middleware
+app.get("/*",(req,res,next)=>{
+    const error = new Error(" does not exist.");
+    error.status = 404;
+    return next(error);
+})
+
+app.use((err,req,res,next)=>{
+    res.render("error.ejs",{url:req.url,code:err.status,reason:err.message});
+})
+
 
 app.listen(3000, () => {
     console.log("Server running on port 3000.");
