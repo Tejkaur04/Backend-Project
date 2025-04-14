@@ -25,9 +25,38 @@ function loadUserData() {
     return [];
 }
 
+function saveUserData(users) {
+    fs.writeFileSync(dataFile, JSON.stringify(users, null, 2));
+}
+
 app.get("/", (req, res) => {
     res.render("login", { message: null });
 });
+
+function getExpensesData(expenses) {
+    const grouped = {};
+
+    expenses.forEach(exp => {
+        const date = new Date(exp.date);
+        const monthKey = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+        if (!grouped[monthKey]) {
+            grouped[monthKey] = {
+                total: 0,
+                items: []
+            };
+        }
+
+        grouped[monthKey].items.push(exp);
+        grouped[monthKey].total += exp.amount;
+    });
+
+    return Object.keys(grouped).map(month => ({
+        month,
+        total: grouped[month].total,
+        items: grouped[month].items
+    }));
+}
 
 app.post("/", (req, res) => {
     const { email, password } = req.body;
@@ -37,7 +66,7 @@ app.post("/", (req, res) => {
     if (user) {
         res.cookie("user", user.username, {
             httpOnly: true,
-            maxAge: 24 * 60 * 60 * 1000, // 1 day
+            maxAge: 24 * 60 * 60 * 1000,
         });
         res.redirect("/home");
     } else {
@@ -58,8 +87,8 @@ app.post("/signup", (req, res) => {
     if (existingUser) {
         res.render("signup", { message: "Email already registered! Please login." });
     } else {
-        users.push({ username, email, password });
-        fs.writeFileSync(dataFile, JSON.stringify(users, null, 2));
+        users.push({ username, email, password, expenses: [] });
+        saveUserData(users);
         res.render("login", { message: "Account registration successful! Please login." });
     }
 });
@@ -71,21 +100,43 @@ app.get("/home", (req, res) => {
         let users = loadUserData();
         let user = users.find(user => user.username === username);
 
-        if (!user || !user.expenses) {
-            user.expenses = [];
-        }
+        if (!user) return res.render("login", { message: "Please login again." });
 
-        res.render("home", { username, expenses: user.expenses });
+        if (!user.expenses) user.expenses = [];
+
+        
+        const totalMonthly = user.expenses.reduce((total, expense) => {
+            const expenseDate = new Date(expense.date);
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+
+            if (expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear) {
+                total += expense.amount;
+            }
+            return total;
+        }, 0);
+
+        res.render("home", { username, expenses: user.expenses, totalMonthly });
     } else {
         res.render("login", { message: "Please login first." });
     }
 });
 
+
 app.get("/expenses", (req, res) => {
     const username = req.cookies.user;
 
     if (username) {
-        res.render("expenses", { username });
+        let users = loadUserData();
+        let user = users.find(u => u.username === username);
+
+        if (!user || !user.expenses) {
+            user.expenses = [];
+        }
+
+        const monthlyData = getExpensesData(user.expenses);  
+
+        res.render('expenses', { monthlyData, username: user.username });
     } else {
         res.render("login", { message: "Please login first." });
     }
@@ -96,15 +147,11 @@ app.post("/expenses", (req, res) => {
     const username = req.cookies.user;
 
     let users = loadUserData();
-    let user = users.find(user => user.username === username);
+    let user = users.find(u => u.username === username);
 
-    if (!user) {
-        return res.status(404).send("User not found");
-    }
+    if (!user) return res.status(404).send("User not found");
 
-    if (!user.expenses) {
-        user.expenses = [];
-    }
+    if (!user.expenses) user.expenses = [];
 
     const newExpense = {
         id: user.expenses.length + 1,
@@ -115,9 +162,147 @@ app.post("/expenses", (req, res) => {
     };
 
     user.expenses.push(newExpense);
-    fs.writeFileSync(dataFile, JSON.stringify(users, null, 2));
+    saveUserData(users);  
+    res.redirect("/expenses");  
+});
 
-    res.redirect("/expenses");
+
+app.post("/expenses/add", (req, res) => {
+    const { productName, category, date, amount } = req.body;
+    const username = req.cookies.user;
+
+    let users = loadUserData();
+    let user = users.find(u => u.username === username);
+
+    if (!user) return res.status(404).send("User not found");
+
+    if (!user.expenses) user.expenses = [];
+
+    const newExpense = {
+        id : user.expenses.length + 1 ,
+        productName,
+        category,
+        date,
+        amount: parseFloat(amount)
+    };
+
+    user.expenses.push(newExpense);
+    saveUserData(users);
+
+    res.redirect("/home"); 
+});
+
+
+app.post("/add-expense", (req, res) => {
+    const { productName, category, date, amount } = req.body;
+    const username = req.cookies.user;
+
+    let users = loadUserData();
+    let user = users.find(u => u.username === username);
+
+    if (!user) return res.status(404).send("User not found");
+
+    if (!user.expenses) user.expenses = [];
+
+    const newExpense = {
+        id: Date.now(), 
+        productName,
+        category,
+        date,
+        amount: parseFloat(amount)
+    };
+
+    user.expenses.push(newExpense);
+    saveUserData(users);
+
+    res.redirect("/home");
+});
+
+
+
+app.post("/delete-expense", (req, res) => {
+    const { id } = req.body;
+    const username = req.cookies.user;
+
+    let users = loadUserData();
+    let user = users.find(u => u.username === username);
+
+    if (!user) return res.status(404).send("User not found");
+
+    user.expenses = user.expenses.filter(e => e.id != id);
+    saveUserData(users);
+
+    res.redirect("/home");
+});
+app.post("/expenses/delete/:id", (req, res) => {
+    const expenseId = parseInt(req.params.id);  
+    const username = req.cookies.user;
+
+    let users = loadUserData();
+    let user = users.find(u => u.username === username);
+
+    if (!user) return res.status(404).send("User not found");
+
+    if (!user.expenses) user.expenses = [];
+
+    const expenseIndex = user.expenses.findIndex(expense => expense.id === expenseId);
+
+    if (expenseIndex !== -1) {
+        user.expenses.splice(expenseIndex, 1);
+
+        saveUserData(users);
+    }
+
+    res.redirect("/home");  
+});
+app.post("/expenses/edit/:id", (req, res) => {
+    const expenseId = parseInt(req.params.id);  
+    const username = req.cookies.user;
+
+    let users = loadUserData();
+    let user = users.find(u => u.username === username);
+
+    if (!user) return res.status(404).send("User not found");
+
+    if (!user.expenses) user.expenses = [];
+
+    
+    const expense = user.expenses.find(exp => exp.id === expenseId);
+
+    if (expense) {
+        
+        expense.productName = productName;
+        expense.category = category;
+        expense.date = date;
+        expense.amount = parseFloat(amount);
+
+        
+        saveUserData(users);
+    }
+
+    res.redirect("/home");  
+});
+
+
+app.post("/edit-expense", (req, res) => {
+    const { id, productName, category, date, amount } = req.body;
+    const username = req.cookies.user;
+
+    let users = loadUserData();
+    let user = users.find(u => u.username === username);
+
+    if (!user) return res.status(404).send("User not found");
+
+    const expense = user.expenses.find(e => e.id == id);
+    if (expense) {
+        expense.productName = productName;
+        expense.category = category;
+        expense.date = date;
+        expense.amount = parseFloat(amount);
+    }
+
+    saveUserData(users);
+    res.redirect("/home");
 });
 
 app.get("/logout", (req, res) => {
