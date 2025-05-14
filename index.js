@@ -15,21 +15,33 @@ app.use(morgan('dev'));
 
 const dataFile = "users.json";
 
+// Helper function to load user data with robust error handling
 async function loadUserData() {
     try {
         const data = await fs.readFile(dataFile, "utf8");
-        return data ? JSON.parse(data) : { users: [], classes: {} }; // Changed this line
+        const parsedData = JSON.parse(data);
+        console.log("Successfully loaded and parsed users.json:", parsedData); // Add this line
+        return parsedData;
     } catch (error) {
-        console.error("Error reading JSON file:", error);
-        return { users: [], classes: {} }; // And this line
+        if (error.code === 'ENOENT') {
+            // If the file doesn't exist, return a default object
+            console.warn("Warning: users.json not found. Creating a new file.");
+            return { users: [], classes: {} };
+        } else {
+            // For other errors, throw the error to be caught by the route handler
+            console.error("Error reading users.json:", error);
+            throw error;
+        }
     }
 }
 
+// Helper function to save user data with robust error handling
 async function saveUserData(data) {
     try {
-        await fs.writeFile(dataFile, JSON.stringify(data, null, 2));
+        await fs.writeFile(dataFile, JSON.stringify(data, null, 2), 'utf8');
     } catch (error) {
-        console.error("Error writing JSON file:", error);
+        console.error("Error writing to users.json:", error);
+        throw error; // Re-throw to be handled by the route
     }
 }
 
@@ -65,41 +77,51 @@ function getExpensesData(expenses) {
 app.post("/", async (req, res) => {
     const { email, password } = req.body;
     console.log("Received login request with email:", email, "and password:", password);
-    const data = await loadUserData();
-    let user = null;
 
-    if (data && data.users) { // Added null check
-        user = data.users.find(user => user.email === email && user.password === password);
-    }
-    console.log("User found:", user);
+    try {
+        const data = await loadUserData();
+        console.log("Data loaded from loadUserData:", data);  // Debug: Check loaded data
 
-    if (user) {
-        res.cookie("user", user.username, {
-            httpOnly: true,
-            maxAge: 24 * 60 * 60 * 1000,
-        });
-        res.redirect("/home");
-    } else {
-        res.render("login", { message: "Email or Password is incorrect. Try again" });
+        const user = data.users.find(u => u.email === email && u.password === password);
+        console.log("User found:", user); // Add this line
+
+        if (user) {
+            res.cookie("user", user.username, {
+                httpOnly: true,
+                maxAge: 24 * 60 * 60 * 1000,
+            });
+            res.redirect("/home");
+        } else {
+            res.render("login", { message: "Email or Password is incorrect. Try again" });
+        }
+    } catch (error) {
+        // Handle errors that occurred during data loading
+        console.error("Login error:", error);
+        res.status(500).send("Internal server error during login."); // Send 500
     }
 });
 
 app.get("/signup", (req, res) => {
-        res.render("signup", { message: null });
+    res.render("signup", { message: null });
 });
 
 app.post("/signup", async (req, res) => {
     const { username, email, password } = req.body;
-    const data = await loadUserData();
 
-    const existingUser = data.users.find(user => user.email === email);
+    try {
+        const data = await loadUserData();
+        const existingUser = data.users.find(user => user.email === email);
 
-    if (existingUser) {
-        res.render("signup", { message: "Email already registered! Please login." });
-    } else {
-        data.users.push({ username, email, password, expenses: [], joinedClasses: [] });
-        await saveUserData(data);
-        res.render("login", { message: "Account registration successful! Please login." });
+        if (existingUser) {
+            res.render("signup", { message: "Email already registered! Please login." });
+        } else {
+            data.users.push({ username, email, password, expenses: [], joinedClasses: [] });
+            await saveUserData(data);
+            res.render("login", { message: "Account registration successful! Please login." });
+        }
+    } catch (error) {
+        console.error("Signup error:", error);
+        res.status(500).send("Internal server error during signup.");
     }
 });
 
@@ -107,32 +129,38 @@ app.get("/home", async (req, res) => {
     const username = req.cookies.user;
 
     if (username) {
-        const data = await loadUserData();
-        const user = data.users.find(u => u.username === username);
+        try {
+            const data = await loadUserData();
+            const user = data.users.find(u => u.username === username);
 
-        if (!user) return res.render("login", { message: "Please login again." });
+            if (!user) return res.render("login", { message: "Please login again." });
 
-        if (!user.expenses) user.expenses = [];
+            if (!user.expenses) user.expenses = [];
 
-        let totalMonthly = user.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            let totalMonthly = user.expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
-        let totalShared = 0;
-        const sharedExpenses = [];
-        if (user.joinedClasses) {
-            for (const classId of user.joinedClasses) {
-                if (data.classes && data.classes[classId]) {
-                    if (data.classes[classId].expenses) {
-                        for (const expense of data.classes[classId].expenses) {
-                            sharedExpenses.push({ ...expense, className: classId });
-                            totalShared += expense.amount;
+            let totalShared = 0;
+            const sharedExpenses = [];
+            if (user.joinedClasses) {
+                for (const classId of user.joinedClasses) {
+                    if (data.classes && data.classes[classId]) {
+                        if (data.classes[classId].expenses) {
+                            for (const expense of data.classes[classId].expenses) {
+                                sharedExpenses.push({ ...expense, className: data.classes[classId].className }); // Added className
+                                totalShared += expense.amount;
+                            }
                         }
                     }
                 }
             }
+            const allSharedExpenses = sharedExpenses;
+            const classes = user.joinedClasses ? user.joinedClasses.map(classId => data.classes[classId]) : [];
+            console.log("username going to template", username)
+            res.render("home", { username, expenses: user.expenses, totalMonthly, sharedExpenses: allSharedExpenses, user, classes, message: null });
+        } catch (error) {
+            console.error("Home route error:", error);
+            res.status(500).send("Internal server error.");
         }
-        const allSharedExpenses = sharedExpenses;
-
-        res.render("home", { username, expenses: user.expenses, totalMonthly, sharedExpenses: allSharedExpenses, user });
     } else {
         res.render("login", { message: "Please login first." });
     }
@@ -143,16 +171,21 @@ app.get("/expenses", async (req, res) => {
     const username = req.cookies.user;
 
     if (username) {
-        const data = await loadUserData();
-        const user = data.users.find(u => u.username === username);
+        try {
+            const data = await loadUserData();
+            const user = data.users.find(u => u.username === username);
 
-        if (!user || !user.expenses) {
-            user.expenses = [];
+            if (!user || !user.expenses) {
+                user.expenses = [];
+            }
+
+            const monthlyData = getExpensesData(user.expenses);
+
+            res.render('expenses', { monthlyData, username: user.username });
+        } catch (error) {
+            console.error("Expenses route error", error);
+            res.status(500).send("Internal server error.");
         }
-
-        const monthlyData = getExpensesData(user.expenses);
-
-        res.render('expenses', { monthlyData, username: user.username });
     } else {
         res.render("login", { message: "Please login first." });
     }
@@ -162,24 +195,29 @@ app.post("/expenses", async (req, res) => {
     const { productName, category, date, amount } = req.body;
     const username = req.cookies.user;
 
-    const data = await loadUserData();
-    const user = data.users.find(u => u.username === username);
+    try {
+        const data = await loadUserData();
+        const user = data.users.find(u => u.username === username);
 
-    if (!user) return res.status(404).send("User not found");
+        if (!user) return res.status(404).send("User not found");
 
-    if (!user.expenses) user.expenses = [];
+        if (!user.expenses) user.expenses = [];
 
-    const newExpense = {
-        id: Date.now(),
-        productName,
-        category,
-        date,
-        amount: parseFloat(amount)
-    };
+        const newExpense = {
+            id: Date.now(),
+            productName,
+            category,
+            date,
+            amount: parseFloat(amount)
+        };
 
-    user.expenses.push(newExpense);
-    await saveUserData(data);
-    res.redirect("/expenses");
+        user.expenses.push(newExpense);
+        await saveUserData(data);
+        res.redirect("/expenses");
+    } catch (error) {
+        console.error("Add expense error:", error);
+        res.status(500).send("Internal server error.");
+    }
 });
 
 
@@ -187,62 +225,72 @@ app.post("/expenses/add", async (req, res) => {
     const { productName, category, date, amount, sharedClass } = req.body;
     const username = req.cookies.user;
 
-    const data = await loadUserData();
-    const user = data.users.find(u => u.username === username);
+    try {
+        const data = await loadUserData();
+        const user = data.users.find(u => u.username === username);
 
-    if (!user) return res.status(404).send("User not found");
+        if (!user) return res.status(404).send("User not found");
 
-    const newExpense = {
-        id: Date.now(),
-        productName,
-        category,
-        date,
-        amount: parseFloat(amount),
-        addedBy: username
-    };
+        const newExpense = {
+            id: Date.now(),
+            productName,
+            category,
+            date,
+            amount: parseFloat(amount),
+            addedBy: username
+        };
 
-    if (sharedClass && data.classes && data.classes[sharedClass] && data.classes[sharedClass].members.includes(username)) {
-        if (!data.classes[sharedClass].expenses) {
-            data.classes[sharedClass].expenses = [];
+        if (sharedClass && data.classes && data.classes[sharedClass] && data.classes[sharedClass].members.includes(username)) {
+            if (!data.classes[sharedClass].expenses) {
+                data.classes[sharedClass].expenses = [];
+            }
+            data.classes[sharedClass].expenses.push(newExpense);
+        } else {
+            if (!user.expenses) user.expenses = [];
+            user.expenses.push(newExpense);
         }
-        data.classes[sharedClass].expenses.push(newExpense);
-    } else {
-        if (!user.expenses) user.expenses = [];
-        user.expenses.push(newExpense);
-    }
 
-    await saveUserData(data);
-    res.redirect("/home");
+        await saveUserData(data);
+        res.redirect("/home");
+    } catch (error) {
+        console.error("Add shared expense error:", error);
+        res.status(500).send("Internal server error.");
+    }
 });
 
 app.post("/expenses/delete/:id", async (req, res) => {
     const expenseId = parseInt(req.params.id);
     const username = req.cookies.user;
 
-    const data = await loadUserData();
-    const user = data.users.find(u => u.username === username);
+    try {
+        const data = await loadUserData();
+        const user = data.users.find(u => u.username === username);
 
-    if (!user) return res.status(404).send("User not found");
+        if (!user) return res.status(404).send("User not found");
 
-    if (!user.expenses) user.expenses = [];
+        if (!user.expenses) user.expenses = [];
 
-    const initialLength = user.expenses.length;
-    user.expenses = user.expenses.filter(expense => expense.id !== expenseId);
+        const initialLength = user.expenses.length;
+        user.expenses = user.expenses.filter(expense => expense.id !== expenseId);
 
-    if (user.expenses.length === initialLength) {
-        for (const classId of user.joinedClasses) {
-            if (data.classes && data.classes[classId] && data.classes[classId].expenses) {
-                const initialSharedLength = data.classes[classId].expenses.length;
-                data.classes[classId].expenses = data.classes[classId].expenses.filter(exp => exp.id !== expenseId);
-                if (data.classes[classId].expenses.length !== initialSharedLength) {
-                    break;
+        if (user.expenses.length === initialLength) {
+            for (const classId of user.joinedClasses) {
+                if (data.classes && data.classes[classId] && data.classes[classId].expenses) {
+                    const initialSharedLength = data.classes[classId].expenses.length;
+                    data.classes[classId].expenses = data.classes[classId].expenses.filter(exp => exp.id !== expenseId);
+                    if (data.classes[classId].expenses.length !== initialSharedLength) {
+                        break;
+                    }
                 }
             }
         }
-    }
 
-    await saveUserData(data);
-    res.redirect("/home");
+        await saveUserData(data);
+        res.redirect("/home");
+    } catch (error) {
+        console.error("Delete expense error:", error);
+        res.status(500).send("Internal server error.");
+    }
 });
 
 app.post("/expenses/edit/:id", async (req, res) => {
@@ -250,62 +298,78 @@ app.post("/expenses/edit/:id", async (req, res) => {
     const { productName, category, date, amount } = req.body;
     const username = req.cookies.user;
 
-    const data = await loadUserData();
-    const user = data.users.find(u => u.username === username);
+    try {
+        const data = await loadUserData();
+        const user = data.users.find(u => u.username === username);
 
-    if (!user) return res.status(404).send("User not found");
+        if (!user) return res.status(404).send("User not found");
 
-    if (!user.expenses) user.expenses = [];
+        if (!user.expenses) user.expenses = [];
 
-    let expenseUpdated = false;
-    const expenseIndex = user.expenses.findIndex(exp => exp.id === expenseId);
-    if (expenseIndex !== -1) {
-        user.expenses[expenseIndex] = { id: expenseId, productName, category, date, amount: parseFloat(amount) };
-        expenseUpdated = true;
-    }
+        let expenseUpdated = false;
+        const expenseIndex = user.expenses.findIndex(exp => exp.id === expenseId);
+        if (expenseIndex !== -1) {
+            user.expenses[expenseIndex] = { id: expenseId, productName, category, date, amount: parseFloat(amount) };
+            expenseUpdated = true;
+        }
 
-    if (!expenseUpdated) {
-        for (const classId of user.joinedClasses) {
-            if (data.classes && data.classes[classId] && data.classes[classId].expenses) {
-                const expenseToEdit = data.classes[classId].expenses.find(exp => exp.id === expenseId);
-                if (expenseToEdit) {
-                    expenseToEdit.productName = productName;
-                    expenseToEdit.category = category;
-                    expenseToEdit.date = date;
-                    expenseToEdit.amount = parseFloat(amount);
-                    expenseUpdated = true;
-                    break;
+        if (!expenseUpdated) {
+            for (const classId of user.joinedClasses) {
+                if (data.classes && data.classes[classId] && data.classes[classId].expenses) {
+                    const expenseToEdit = data.classes[classId].expenses.find(exp => exp.id === expenseId);
+                    if (expenseToEdit) {
+                        expenseToEdit.productName = productName;
+                        expenseToEdit.category = category;
+                        expenseToEdit.date = date;
+                        expenseToEdit.amount = parseFloat(amount);
+                        expenseUpdated = true;
+                        break;
+                    }
                 }
             }
         }
-    }
 
-    await saveUserData(data);
-    res.redirect("/home");
+        await saveUserData(data);
+        res.redirect("/home");
+    } catch (error) {
+        console.error("Edit expense error:", error);
+        res.status(500).send("Internal server error.");
+    }
 });
 
 app.post("/create-class", async (req, res) => {
     const username = req.cookies.user;
     if (!username) return res.redirect('/login');
 
-    const classId = uuidv4();
-    const data = await loadUserData();
+    try {
+        const classId = uuidv4();
+        const data = await loadUserData();
 
-    if (!data.classes) {
-        data.classes = {};
-    }
-
-    data.classes[classId] = { members: [username], expenses: [] };
-    const user = data.users.find(u => u.username === username);
-    if (user) {
-        if (!user.joinedClasses) {
-            user.joinedClasses = [];
+        if (!data.classes) {
+            data.classes = {};
         }
-        user.joinedClasses.push(classId);
-        await saveUserData(data);
-        res.redirect('/home');
-    } else {
-        res.status(404).send("User not found");
+
+        data.classes[classId] = {
+            members: [username],
+            expenses: [],
+            className: `Class-${Object.keys(data.classes).length + 1}`, //give a default name,
+            classId: classId
+        };
+
+        const user = data.users.find(u => u.username === username);
+        if (user) {
+            if (!user.joinedClasses) {
+                user.joinedClasses = [];
+            }
+            user.joinedClasses.push(classId);
+            await saveUserData(data);
+            res.redirect('/home');
+        } else {
+            res.status(404).send("User not found");
+        }
+    } catch (error) {
+        console.error("Create class error:", error);
+        res.status(500).send("Internal server error.");
     }
 });
 
@@ -314,21 +378,33 @@ app.post("/join-class", async (req, res) => {
     const { classId } = req.body;
     if (!username || !classId) return res.redirect('/home');
 
-    const data = await loadUserData();
+    try {
+        const data = await loadUserData();
 
-    if (data.classes && data.classes[classId] && !data.classes[classId].members.includes(username)) {
-        data.classes[classId].members.push(username);
-        const user = data.users.find(u => u.username === username);
-        if (user) {
-            if (!user.joinedClasses) {
-                user.joinedClasses = [];
-            }
-            user.joinedClasses.push(classId);
-            await saveUserData(data);
+        if (!data.classes) {
+            data.classes = {};
         }
-    }
 
-    res.redirect('/home');
+        if (data.classes[classId]) {
+            if (!data.classes[classId].members.includes(username)) {
+                data.classes[classId].members.push(username);
+                const user = data.users.find(u => u.username === username);
+                if (user) {
+                    if (!user.joinedClasses) {
+                        user.joinedClasses = [];
+                    }
+                    user.joinedClasses.push(classId);
+                    await saveUserData(data);
+                }
+            }
+            res.redirect('/home');
+        } else {
+            res.render("home", { message: "Class not found" });
+        }
+    } catch (error) {
+        console.error("Join class error:", error);
+        res.status(500).send("Internal server error.");
+    }
 });
 
 app.get("/logout", (req, res) => {

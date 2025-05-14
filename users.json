@@ -57,6 +57,10 @@
           "date": "2025-03-06",
           "amount": 50
         }
+      ],
+      "joinedClasses": [
+        "af932fd7-636a-4e5f-a555-3e55b9260627",
+        "42905a84-d735-467e-8668-e98e0ea9e8d7"
       ]
     },
     {
@@ -105,7 +109,22 @@
           "category": "Food",
           "date": "2025-04-16",
           "amount": 30
+        },
+        {
+          "id": 1747231066299,
+          "productName": "hiiii",
+          "category": "food",
+          "date": "2025-05-14",
+          "amount": 80,
+          "addedBy": "Tejinder"
         }
+      ],
+      "joinedClasses": [
+        "d7d7636c-f7e2-4d73-9895-8432913a2022",
+        "ba0d4f6d-fe95-40a9-9ac5-13c25515ac47",
+        "326dbb3e-92ad-420d-920d-3e80ee853982",
+        "af932fd7-636a-4e5f-a555-3e55b9260627",
+        "42905a84-d735-467e-8668-e98e0ea9e8d7"
       ]
     }
   ],
@@ -114,7 +133,74 @@
       "members": [
         "Piyush Makkar"
       ],
-      "expenses": []
+      "expenses": [
+        {
+          "id": 1747230361596,
+          "productName": "ballerina capuncina",
+          "category": "Food",
+          "date": "2025-05-13",
+          "amount": 1000,
+          "addedBy": "Piyush Makkar",
+          "type": "shared"
+        }
+      ]
+    },
+    "d7d7636c-f7e2-4d73-9895-8432913a2022": {
+      "members": [
+        "Tejinder"
+      ],
+      "expenses": [],
+      "className": "Class-2"
+    },
+    "ba0d4f6d-fe95-40a9-9ac5-13c25515ac47": {
+      "members": [
+        "Tejinder"
+      ],
+      "expenses": [],
+      "className": "Class-3"
+    },
+    "326dbb3e-92ad-420d-920d-3e80ee853982": {
+      "members": [
+        "Tejinder"
+      ],
+      "expenses": [],
+      "className": "Class-4"
+    },
+    "af932fd7-636a-4e5f-a555-3e55b9260627": {
+      "members": [
+        "Tejinder",
+        "aaina Kaushik"
+      ],
+      "expenses": [
+        {
+          "id": 1747235576555,
+          "productName": "speaker",
+          "category": "entertainment",
+          "date": "2025-05-14",
+          "amount": 5000,
+          "addedBy": "aaina Kaushik"
+        }
+      ],
+      "className": "Class-5",
+      "classId": "af932fd7-636a-4e5f-a555-3e55b9260627"
+    },
+    "42905a84-d735-467e-8668-e98e0ea9e8d7": {
+      "members": [
+        "Tejinder",
+        "aaina Kaushik"
+      ],
+      "expenses": [
+        {
+          "id": 1747235874418,
+          "productName": "Peri Peri Fries",
+          "category": "Food",
+          "date": "2025-05-06",
+          "amount": 119,
+          "addedBy": "aaina Kaushik"
+        }
+      ],
+      "className": "Class-6",
+      "classId": "42905a84-d735-467e-8668-e98e0ea9e8d7"
     }
   }
 }
