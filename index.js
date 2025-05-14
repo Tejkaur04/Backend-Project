@@ -20,7 +20,6 @@ async function loadUserData() {
     try {
         const data = await fs.readFile(dataFile, "utf8");
         const parsedData = JSON.parse(data);
-        console.log("Successfully loaded and parsed users.json:", parsedData); // Add this line
         return parsedData;
     } catch (error) {
         if (error.code === 'ENOENT') {
@@ -80,10 +79,7 @@ app.post("/", async (req, res) => {
 
     try {
         const data = await loadUserData();
-        console.log("Data loaded from loadUserData:", data);  // Debug: Check loaded data
-
         const user = data.users.find(u => u.email === email && u.password === password);
-        console.log("User found:", user); // Add this line
 
         if (user) {
             res.cookie("user", user.username, {
@@ -144,10 +140,19 @@ app.get("/home", async (req, res) => {
             if (user.joinedClasses) {
                 for (const classId of user.joinedClasses) {
                     if (data.classes && data.classes[classId]) {
-                        if (data.classes[classId].expenses) {
-                            for (const expense of data.classes[classId].expenses) {
-                                sharedExpenses.push({ ...expense, className: data.classes[classId].className }); // Added className
-                                totalShared += expense.amount;
+                        const currentClass = data.classes[classId];
+                        const memberCount = currentClass.members.length;
+                        if (currentClass.expenses) {
+                            for (const expense of currentClass.expenses) {
+                                const sharedAmount = expense.amount / memberCount;  // Calculate shared amount
+                                if (currentClass.members.includes(username)) {
+                                    sharedExpenses.push({
+                                        ...expense,
+                                        className: currentClass.className,
+                                        sharedAmount: sharedAmount, // Store the shared amount
+                                    });
+                                    totalShared += sharedAmount;
+                                }
                             }
                         }
                     }
@@ -155,7 +160,6 @@ app.get("/home", async (req, res) => {
             }
             const allSharedExpenses = sharedExpenses;
             const classes = user.joinedClasses ? user.joinedClasses.map(classId => data.classes[classId]) : [];
-            console.log("username going to template", username)
             res.render("home", { username, expenses: user.expenses, totalMonthly, sharedExpenses: allSharedExpenses, user, classes, message: null });
         } catch (error) {
             console.error("Home route error:", error);
@@ -178,10 +182,61 @@ app.get("/expenses", async (req, res) => {
             if (!user || !user.expenses) {
                 user.expenses = [];
             }
-
+            // Include shared expenses calculation here as well, similar to /home
+            let totalShared = 0;
+            const sharedExpenses = [];
+            if (user.joinedClasses) {
+                for (const classId of user.joinedClasses) {
+                    if (data.classes && data.classes[classId]) {
+                        const currentClass = data.classes[classId];
+                        const memberCount = currentClass.members.length;
+                        if (currentClass.expenses) {
+                            for (const expense of currentClass.expenses) {
+                                const sharedAmount = expense.amount / memberCount;  // Calculate shared amount
+                                if (currentClass.members.includes(username)) {
+                                    sharedExpenses.push({
+                                        ...expense,
+                                        className: currentClass.className,
+                                        sharedAmount: sharedAmount, // Store the shared amount
+                                    });
+                                    totalShared += sharedAmount;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             const monthlyData = getExpensesData(user.expenses);
+             // Combine personal and shared expenses for display
+            const allExpenses = [...monthlyData];  // Start with personal expenses
+            sharedExpenses.forEach(sharedExpense => {
+                // Try to find a matching expense in the existing monthlyData
+                const matchingMonth = allExpenses.find(month => {
+                    return month.items.find(item => item.id === sharedExpense.id);
+                });
 
-            res.render('expenses', { monthlyData, username: user.username });
+                if (matchingMonth) {
+                    // If found, update the existing expense item
+                    const existingItemIndex = matchingMonth.items.findIndex(item => item.id === sharedExpense.id);
+                    if (existingItemIndex > -1) {
+                        matchingMonth.items[existingItemIndex] = {
+                            ...matchingMonth.items[existingItemIndex],
+                            sharedAmount: sharedExpense.sharedAmount
+                        };
+                    }
+                } else {
+                    // If not found, add the shared expense as a new month
+                    const monthKey = new Date(sharedExpense.date).toLocaleString('default', { month: 'long', year: 'numeric' });
+                    let monthToAdd = allExpenses.find(m => m.month === monthKey);
+                    if (!monthToAdd) {
+                        monthToAdd = { month: monthKey, total: 0, items: [] };
+                        allExpenses.push(monthToAdd);
+                    }
+                    monthToAdd.items.push(sharedExpense);
+                    monthToAdd.total += sharedExpense.sharedAmount;
+                }
+            });
+            res.render('expenses', { monthlyData: allExpenses, username: user.username }); // Pass combined data
         } catch (error) {
             console.error("Expenses route error", error);
             res.status(500).send("Internal server error.");
@@ -241,10 +296,15 @@ app.post("/expenses/add", async (req, res) => {
         };
 
         if (sharedClass && data.classes && data.classes[sharedClass] && data.classes[sharedClass].members.includes(username)) {
+            const currentClass = data.classes[sharedClass];
+            const memberCount = currentClass.members.length;
+            const sharedAmount = parseFloat(amount) / memberCount;
+
+            const sharedExpense = { ...newExpense, sharedAmount }; // Store sharedAmount
             if (!data.classes[sharedClass].expenses) {
                 data.classes[sharedClass].expenses = [];
             }
-            data.classes[sharedClass].expenses.push(newExpense);
+            data.classes[sharedClass].expenses.push(sharedExpense);
         } else {
             if (!user.expenses) user.expenses = [];
             user.expenses.push(newExpense);

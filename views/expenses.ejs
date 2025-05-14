@@ -12,17 +12,18 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000; /* Match body background */
+            color: #fff;
         }
-        h2{
+
+        h2 {
             color: rgb(83, 181, 181);
         }
 
         .body-container {
             height: 100vh;
             width: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
             display: flex;
-            color: white;
         }
 
         .left-side {
@@ -52,7 +53,7 @@
         }
 
         .user {
-            color: white;
+            color: #fff;
             font-size: medium;
             margin-top: 1vh;
             text-transform: capitalize;
@@ -68,12 +69,18 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            color: white;
+            color: #fff;
+            transition: background-color 0.3s ease; /* Smooth transition */
         }
 
-        a {
-            color: white;
+        .box a {
+            color: #fff;
             text-decoration: none;
+            font-size: 1.1em; /* Make link একটু বড় */
+        }
+
+        .box:hover {
+            background-color: rgba(87, 87, 87, 0.4); /* Lighter on hover */
         }
 
         .cards-container {
@@ -83,19 +90,21 @@
         }
 
         .expense-card {
-            background-color: lightcyan;
-            color:black;
+            background-color: #111; /* Darker background for cards */
+            color: #eee; /* Lighter text */
             border-radius: 10px;
             padding: 2vh;
             width: 40%;
             min-width: 300px;
-            box-shadow: 0 0 10px lightskyblue;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); /* More subtle shadow */
+            border: 1px solid rgba(192, 192, 192, 0.1); /* тон border */
         }
 
         .expense-card h3 {
             margin-bottom: 2vh;
-            border-bottom: 1px solid gray;
+            border-bottom: 1px solid rgba(192, 192, 192, 0.2); /* Lighter border */
             padding-bottom: 1vh;
+            color: rgb(83, 181, 181);
         }
 
         .expense-card ul {
@@ -107,14 +116,32 @@
             margin-bottom: 1vh;
             display: flex;
             justify-content: space-between;
+            align-items: center; /* Vertically center items */
+            border-bottom: 1px solid rgba(192, 192, 192, 0.1);
+            padding-bottom: 1vh;
+        }
+        .expense-card li:last-child{
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .expense-card li span:first-child {
+            font-weight: normal; /* Product name */
+            color: #fff;
+        }
+
+        .expense-card li span:last-child {
+            font-weight: bold; /* Amount */
+            color: #fff;
         }
 
         .expense-card .total {
             text-align: right;
             font-weight: bold;
             margin-top: 2vh;
-            border-top: 1px solid gray;
+            border-top: 1px solid rgba(192, 192, 192, 0.2); /* Lighter border */
             padding-top: 1vh;
+            color: #fff;
         }
     </style>
 </head>
@@ -142,7 +169,7 @@
                     <p>No expenses to show.</p>
                 <% } %>
 
-                <% monthlyData.forEach(monthEntry => { %> <!-- Only one loop is needed -->
+                <% monthlyData.forEach(monthEntry => { %>
                     <div class="expense-card">
                         <h3><%= monthEntry.month %></h3>
                         <ul>
@@ -150,7 +177,12 @@
                                 <% monthEntry.items.forEach(item => { %>
                                     <li>
                                         <span><%= item.productName %></span>
-                                        <span>₹<%= item.amount.toFixed(2) %></span>
+                                        <span>
+                                            ₹<%= item.amount.toFixed(2) %>
+                                            <% if (item.sharedAmount) { %>
+                                                <span style="color: #87CEFA;">(Shared: ₹<%= item.sharedAmount.toFixed(2) %>)</span>
+                                            <% } %>
+                                        </span>
                                     </li>
                                 <% }); %>
                             <% } else { %>
@@ -160,7 +192,6 @@
                         <div class="total">
                             Total: ₹<%= (monthEntry.total && !isNaN(monthEntry.total)) ? monthEntry.total.toFixed(2) : '0.00' %>
                         </div>
-                        
                     </div>
                 <% }); %>
             </div>
