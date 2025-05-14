@@ -43,6 +43,10 @@
           "date": "2005-05-01",
           "amount": 599
         }
+      ],
+      "joinedClasses": [
+        "4e37585d-b129-4c3a-afd8-932d187e24f3",
+        "cac158ca-2231-41a7-8cfa-3b81e7068855"
       ]
     },
     {
@@ -60,7 +64,9 @@
       ],
       "joinedClasses": [
         "af932fd7-636a-4e5f-a555-3e55b9260627",
-        "42905a84-d735-467e-8668-e98e0ea9e8d7"
+        "42905a84-d735-467e-8668-e98e0ea9e8d7",
+        "4e37585d-b129-4c3a-afd8-932d187e24f3",
+        "cac158ca-2231-41a7-8cfa-3b81e7068855"
       ]
     },
     {
@@ -124,7 +130,9 @@
         "ba0d4f6d-fe95-40a9-9ac5-13c25515ac47",
         "326dbb3e-92ad-420d-920d-3e80ee853982",
         "af932fd7-636a-4e5f-a555-3e55b9260627",
-        "42905a84-d735-467e-8668-e98e0ea9e8d7"
+        "42905a84-d735-467e-8668-e98e0ea9e8d7",
+        "4e37585d-b129-4c3a-afd8-932d187e24f3",
+        "cac158ca-2231-41a7-8cfa-3b81e7068855"
       ]
     }
   ],
@@ -201,6 +209,46 @@
       ],
       "className": "Class-6",
       "classId": "42905a84-d735-467e-8668-e98e0ea9e8d7"
+    },
+    "4e37585d-b129-4c3a-afd8-932d187e24f3": {
+      "members": [
+        "Tejinder",
+        "aaina Kaushik",
+        "Testing"
+      ],
+      "expenses": [
+        {
+          "id": 1747240444921,
+          "productName": "dosa",
+          "category": "Food",
+          "date": "2025-05-13",
+          "amount": 150,
+          "addedBy": "aaina Kaushik",
+          "sharedAmount": 75
+        }
+      ],
+      "className": "Class-7",
+      "classId": "4e37585d-b129-4c3a-afd8-932d187e24f3"
+    },
+    "cac158ca-2231-41a7-8cfa-3b81e7068855": {
+      "members": [
+        "Tejinder",
+        "aaina Kaushik",
+        "Testing"
+      ],
+      "expenses": [
+        {
+          "id": 1747240802725,
+          "productName": "water colours",
+          "category": "stationary",
+          "date": "2025-05-08",
+          "amount": 140,
+          "addedBy": "Tejinder",
+          "sharedAmount": 140
+        }
+      ],
+      "className": "Class-8",
+      "classId": "cac158ca-2231-41a7-8cfa-3b81e7068855"
     }
   }
 }

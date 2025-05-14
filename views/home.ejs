@@ -461,7 +461,7 @@
 
                     <div class="create-class-section">
                         <h4>Create a New Class</h4>
-                         <form action="/create-class" method="POST">
+                        <form action="/create-class" method="POST">
                             <button type="submit">Create New Class and Get Link</button>
                         </form>
                     </div>
@@ -527,6 +527,7 @@
                         </tr>
                     </thead>
                     <tbody>
+                        <% let totalExpenses = 0; %>
                         <% if (locals.expenses && expenses.length > 0) { %>
                             <% expenses.forEach(expense => { %>
                                 <tr>
@@ -536,6 +537,7 @@
                                     <td><%= expense.date %></td>
                                     <td><%= expense.amount %></td>
                                 </tr>
+                                <% totalExpenses += expense.amount; %>
                             <% }) %>
                         <% } %>
                         <% if (locals.sharedExpenses && locals.sharedExpenses.length > 0) { %>
@@ -547,6 +549,7 @@
                                     <td><%= expense.date %></td>
                                     <td><%= expense.amount %></td>
                                 </tr>
+                                 <% totalExpenses += expense.amount; %>
                             <% }) %>
                         <% } else if ((!locals.expenses || expenses.length === 0) && (!locals.sharedExpenses || locals.sharedExpenses.length === 0)) { %>
                             <tr>
@@ -555,9 +558,9 @@
                         <% } %>
                     </tbody>
                 </table>
-            </div>
-             <div class = "total-expenses">
-                 <p>Total Expenses: ₹<%= (totalMonthly + (typeof totalShared !== 'undefined' ? totalShared : 0)).toFixed(2) %></p>
+                <div class="total-expenses">
+                    <p>Total Expenses: ₹<%=  totalExpenses.toFixed(2) %></p>
+                </div>
             </div>
         </div>
     </div>
