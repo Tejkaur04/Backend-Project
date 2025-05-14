@@ -1,9 +1,9 @@
 const express = require('express');
 const app = express();
-const fs = require('fs');
+const fs = require('fs').promises;
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
-
+const { v4: uuidv4 } = require('uuid');
 
 app.set("view engine", "ejs");
 
@@ -15,21 +15,22 @@ app.use(morgan('dev'));
 
 const dataFile = "users.json";
 
-function loadUserData() {
-    if (fs.existsSync(dataFile)) {
-        try {
-            const data = fs.readFileSync(dataFile, "utf8");
-            return data ? JSON.parse(data) : [];
-        } catch (error) {
-            console.error("Error reading JSON file:", error);
-            return [];
-        }
+async function loadUserData() {
+    try {
+        const data = await fs.readFile(dataFile, "utf8");
+        return data ? JSON.parse(data) : { users: [], classes: {} }; // Changed this line
+    } catch (error) {
+        console.error("Error reading JSON file:", error);
+        return { users: [], classes: {} }; // And this line
     }
-    return [];
 }
 
-function saveUserData(users) {
-    fs.writeFileSync(dataFile, JSON.stringify(users, null, 2));
+async function saveUserData(data) {
+    try {
+        await fs.writeFile(dataFile, JSON.stringify(data, null, 2));
+    } catch (error) {
+        console.error("Error writing JSON file:", error);
+    }
 }
 
 app.get("/", (req, res) => {
@@ -61,10 +62,16 @@ function getExpensesData(expenses) {
     }));
 }
 
-app.post("/", (req, res) => {
+app.post("/", async (req, res) => {
     const { email, password } = req.body;
-    let users = loadUserData();
-    const user = users.find(user => user.email === email && user.password === password);
+    console.log("Received login request with email:", email, "and password:", password);
+    const data = await loadUserData();
+    let user = null;
+
+    if (data && data.users) { // Added null check
+        user = data.users.find(user => user.email === email && user.password === password);
+    }
+    console.log("User found:", user);
 
     if (user) {
         res.cookie("user", user.username, {
@@ -78,66 +85,72 @@ app.post("/", (req, res) => {
 });
 
 app.get("/signup", (req, res) => {
-    res.render("signup", { message: null });
+        res.render("signup", { message: null });
 });
 
-app.post("/signup", (req, res) => {
+app.post("/signup", async (req, res) => {
     const { username, email, password } = req.body;
-    let users = loadUserData();
+    const data = await loadUserData();
 
-    const existingUser = users.find(user => user.email === email);
+    const existingUser = data.users.find(user => user.email === email);
 
     if (existingUser) {
         res.render("signup", { message: "Email already registered! Please login." });
     } else {
-        users.push({ username, email, password, expenses: [] });
-        saveUserData(users);
+        data.users.push({ username, email, password, expenses: [], joinedClasses: [] });
+        await saveUserData(data);
         res.render("login", { message: "Account registration successful! Please login." });
     }
 });
 
-app.get("/home", (req, res) => {
+app.get("/home", async (req, res) => {
     const username = req.cookies.user;
 
     if (username) {
-        let users = loadUserData();
-        let user = users.find(user => user.username === username);
+        const data = await loadUserData();
+        const user = data.users.find(u => u.username === username);
 
         if (!user) return res.render("login", { message: "Please login again." });
 
         if (!user.expenses) user.expenses = [];
 
-        
-        const totalMonthly = user.expenses.reduce((total, expense) => {
-            const expenseDate = new Date(expense.date);
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
+        let totalMonthly = user.expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
-            if (expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear) {
-                total += expense.amount;
+        let totalShared = 0;
+        const sharedExpenses = [];
+        if (user.joinedClasses) {
+            for (const classId of user.joinedClasses) {
+                if (data.classes && data.classes[classId]) {
+                    if (data.classes[classId].expenses) {
+                        for (const expense of data.classes[classId].expenses) {
+                            sharedExpenses.push({ ...expense, className: classId });
+                            totalShared += expense.amount;
+                        }
+                    }
+                }
             }
-            return total;
-        }, 0);
+        }
+        const allSharedExpenses = sharedExpenses;
 
-        res.render("home", { username, expenses: user.expenses, totalMonthly });
+        res.render("home", { username, expenses: user.expenses, totalMonthly, sharedExpenses: allSharedExpenses, user });
     } else {
         res.render("login", { message: "Please login first." });
     }
 });
 
 
-app.get("/expenses", (req, res) => {
+app.get("/expenses", async (req, res) => {
     const username = req.cookies.user;
 
     if (username) {
-        let users = loadUserData();
-        let user = users.find(u => u.username === username);
+        const data = await loadUserData();
+        const user = data.users.find(u => u.username === username);
 
         if (!user || !user.expenses) {
             user.expenses = [];
         }
 
-        const monthlyData = getExpensesData(user.expenses);  
+        const monthlyData = getExpensesData(user.expenses);
 
         res.render('expenses', { monthlyData, username: user.username });
     } else {
@@ -145,19 +158,19 @@ app.get("/expenses", (req, res) => {
     }
 });
 
-app.post("/expenses", (req, res) => {
+app.post("/expenses", async (req, res) => {
     const { productName, category, date, amount } = req.body;
     const username = req.cookies.user;
 
-    let users = loadUserData();
-    let user = users.find(u => u.username === username);
+    const data = await loadUserData();
+    const user = data.users.find(u => u.username === username);
 
     if (!user) return res.status(404).send("User not found");
 
     if (!user.expenses) user.expenses = [];
 
     const newExpense = {
-        id: user.expenses.length + 1,
+        id: Date.now(),
         productName,
         category,
         date,
@@ -165,147 +178,157 @@ app.post("/expenses", (req, res) => {
     };
 
     user.expenses.push(newExpense);
-    saveUserData(users);  
-    res.redirect("/expenses");  
+    await saveUserData(data);
+    res.redirect("/expenses");
 });
 
 
-app.post("/expenses/add", (req, res) => {
-    const { productName, category, date, amount } = req.body;
+app.post("/expenses/add", async (req, res) => {
+    const { productName, category, date, amount, sharedClass } = req.body;
     const username = req.cookies.user;
 
-    let users = loadUserData();
-    let user = users.find(u => u.username === username);
+    const data = await loadUserData();
+    const user = data.users.find(u => u.username === username);
 
     if (!user) return res.status(404).send("User not found");
 
-    if (!user.expenses) user.expenses = [];
-
     const newExpense = {
-        id : user.expenses.length + 1 ,
+        id: Date.now(),
         productName,
         category,
         date,
-        amount: parseFloat(amount)
+        amount: parseFloat(amount),
+        addedBy: username
     };
 
-    user.expenses.push(newExpense);
-    saveUserData(users);
+    if (sharedClass && data.classes && data.classes[sharedClass] && data.classes[sharedClass].members.includes(username)) {
+        if (!data.classes[sharedClass].expenses) {
+            data.classes[sharedClass].expenses = [];
+        }
+        data.classes[sharedClass].expenses.push(newExpense);
+    } else {
+        if (!user.expenses) user.expenses = [];
+        user.expenses.push(newExpense);
+    }
 
-    res.redirect("/home"); 
-});
-
-
-app.post("/add-expense", (req, res) => {
-    const { productName, category, date, amount } = req.body;
-    const username = req.cookies.user;
-
-    let users = loadUserData();
-    let user = users.find(u => u.username === username);
-
-    if (!user) return res.status(404).send("User not found");
-
-    if (!user.expenses) user.expenses = [];
-
-    const newExpense = {
-        id: Date.now(), 
-        productName,
-        category,
-        date,
-        amount: parseFloat(amount)
-    };
-
-    user.expenses.push(newExpense);
-    saveUserData(users);
-
+    await saveUserData(data);
     res.redirect("/home");
 });
 
-
-
-app.post("/delete-expense", (req, res) => {
-    const { id } = req.body;
+app.post("/expenses/delete/:id", async (req, res) => {
+    const expenseId = parseInt(req.params.id);
     const username = req.cookies.user;
 
-    let users = loadUserData();
-    let user = users.find(u => u.username === username);
-
-    if (!user) return res.status(404).send("User not found");
-
-    user.expenses = user.expenses.filter(e => e.id != id);
-    saveUserData(users);
-
-    res.redirect("/home");
-});
-app.post("/expenses/delete/:id", (req, res) => {
-    const expenseId = parseInt(req.params.id);  
-    const username = req.cookies.user;
-
-    let users = loadUserData();
-    let user = users.find(u => u.username === username);
+    const data = await loadUserData();
+    const user = data.users.find(u => u.username === username);
 
     if (!user) return res.status(404).send("User not found");
 
     if (!user.expenses) user.expenses = [];
 
-    const expenseIndex = user.expenses.findIndex(expense => expense.id === expenseId);
+    const initialLength = user.expenses.length;
+    user.expenses = user.expenses.filter(expense => expense.id !== expenseId);
 
+    if (user.expenses.length === initialLength) {
+        for (const classId of user.joinedClasses) {
+            if (data.classes && data.classes[classId] && data.classes[classId].expenses) {
+                const initialSharedLength = data.classes[classId].expenses.length;
+                data.classes[classId].expenses = data.classes[classId].expenses.filter(exp => exp.id !== expenseId);
+                if (data.classes[classId].expenses.length !== initialSharedLength) {
+                    break;
+                }
+            }
+        }
+    }
+
+    await saveUserData(data);
+    res.redirect("/home");
+});
+
+app.post("/expenses/edit/:id", async (req, res) => {
+    const expenseId = parseInt(req.params.id);
+    const { productName, category, date, amount } = req.body;
+    const username = req.cookies.user;
+
+    const data = await loadUserData();
+    const user = data.users.find(u => u.username === username);
+
+    if (!user) return res.status(404).send("User not found");
+
+    if (!user.expenses) user.expenses = [];
+
+    let expenseUpdated = false;
+    const expenseIndex = user.expenses.findIndex(exp => exp.id === expenseId);
     if (expenseIndex !== -1) {
-        user.expenses.splice(expenseIndex, 1);
-
-        saveUserData(users);
+        user.expenses[expenseIndex] = { id: expenseId, productName, category, date, amount: parseFloat(amount) };
+        expenseUpdated = true;
     }
 
-    res.redirect("/home");  
-});
-app.post("/expenses/edit/:id", (req, res) => {
-    const expenseId = parseInt(req.params.id);  
-    const username = req.cookies.user;
-
-    let users = loadUserData();
-    let user = users.find(u => u.username === username);
-
-    if (!user) return res.status(404).send("User not found");
-
-    if (!user.expenses) user.expenses = [];
-
-    
-    const expense = user.expenses.find(exp => exp.id === expenseId);
-
-    if (expense) {
-        
-        expense.productName = productName;
-        expense.category = category;
-        expense.date = date;
-        expense.amount = parseFloat(amount);
-
-        
-        saveUserData(users);
+    if (!expenseUpdated) {
+        for (const classId of user.joinedClasses) {
+            if (data.classes && data.classes[classId] && data.classes[classId].expenses) {
+                const expenseToEdit = data.classes[classId].expenses.find(exp => exp.id === expenseId);
+                if (expenseToEdit) {
+                    expenseToEdit.productName = productName;
+                    expenseToEdit.category = category;
+                    expenseToEdit.date = date;
+                    expenseToEdit.amount = parseFloat(amount);
+                    expenseUpdated = true;
+                    break;
+                }
+            }
+        }
     }
 
-    res.redirect("/home");  
-});
-
-
-app.post("/edit-expense", (req, res) => {
-    const { id, productName, category, date, amount } = req.body;
-    const username = req.cookies.user;
-
-    let users = loadUserData();
-    let user = users.find(u => u.username === username);
-
-    if (!user) return res.status(404).send("User not found");
-
-    const expense = user.expenses.find(e => e.id == id);
-    if (expense) {
-        expense.productName = productName;
-        expense.category = category;
-        expense.date = date;
-        expense.amount = parseFloat(amount);
-    }
-
-    saveUserData(users);
+    await saveUserData(data);
     res.redirect("/home");
+});
+
+app.post("/create-class", async (req, res) => {
+    const username = req.cookies.user;
+    if (!username) return res.redirect('/login');
+
+    const classId = uuidv4();
+    const data = await loadUserData();
+
+    if (!data.classes) {
+        data.classes = {};
+    }
+
+    data.classes[classId] = { members: [username], expenses: [] };
+    const user = data.users.find(u => u.username === username);
+    if (user) {
+        if (!user.joinedClasses) {
+            user.joinedClasses = [];
+        }
+        user.joinedClasses.push(classId);
+        await saveUserData(data);
+        res.redirect('/home');
+    } else {
+        res.status(404).send("User not found");
+    }
+});
+
+app.post("/join-class", async (req, res) => {
+    const username = req.cookies.user;
+    const { classId } = req.body;
+    if (!username || !classId) return res.redirect('/home');
+
+    const data = await loadUserData();
+
+    if (data.classes && data.classes[classId] && !data.classes[classId].members.includes(username)) {
+        data.classes[classId].members.push(username);
+        const user = data.users.find(u => u.username === username);
+        if (user) {
+            if (!user.joinedClasses) {
+                user.joinedClasses = [];
+            }
+            user.joinedClasses.push(classId);
+            await saveUserData(data);
+        }
+    }
+
+    res.redirect('/home');
 });
 
 app.get("/logout", (req, res) => {
@@ -313,17 +336,15 @@ app.get("/logout", (req, res) => {
     res.redirect("/");
 });
 
-// error handling middleware
-app.get("/*",(req,res,next)=>{
+app.get("/*", (req, res, next) => {
     const error = new Error(" does not exist.");
     error.status = 404;
     return next(error);
 })
 
-app.use((err,req,res,next)=>{
-    res.render("error.ejs",{url:req.url,code:err.status,reason:err.message});
+app.use((err, req, res, next) => {
+    res.render("error.ejs", { url: req.url, code: err.status, reason: err.message });
 })
-
 
 app.listen(3000, () => {
     console.log("Server running on port 3000.");

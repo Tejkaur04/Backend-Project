@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Home Page</title>
     <style>
         * {
@@ -87,11 +86,14 @@
         tr {
             border-bottom: 1px solid silver;
         }
-        input, button {
-            padding: 5px;
+        input, button, select {
+            padding: 8px;
             border-radius: 5px;
             border: none;
             background-color: lightcyan;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            width: 100%;
         }
         button {
             cursor: pointer;
@@ -103,13 +105,274 @@
         }
         .form-row {
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
-        .form-row input {
-            width: 150px;
+        .form-row input, .form-row select {
+            width: calc(50% - 5px); /* Adjust as needed */
+            flex-grow: 1;
         }
+        .form-row button {
+            width: 100%;
+            flex: 0 0 100%;
+        }
+
+        .shared-expenses-container {
+            margin-top: 20px;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .shared-expenses-container h3 {
+            color: rgb(139, 207, 207);
+            margin-bottom: 10px;
+        }
+
+        .shared-expense-item {
+            border-bottom: 1px solid rgba(192, 192, 192, 0.477);
+            padding: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .shared-expense-item span {
+            margin-right: 15px;
+        }
+
+        .shared-expense-actions form {
+            display: inline;
+            margin-left: 10px;
+        }
+
+        .shared-expense-actions button {
+            padding: 5px 8px;
+            border-radius: 5px;
+            border: none;
+            background-color: #d9534f;
+            color: white;
+            cursor: pointer;
+            font-size: small;
+        }
+
+        .shared-expense-form {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #222;
+            border-radius: 7px;
+        }
+
+        .shared-expense-form label {
+            color: white;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .shared-expense-form select,
+        .shared-expense-form input,
+        .shared-expense-form button {
+            padding: 8px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: none;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: #333;
+            color: white;
+        }
+
+        .shared-expense-form button {
+            background-color: #5cb85c;
+            cursor: pointer;
+        }
+
+        .create-join-class {
+            margin-top: 20px;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .create-join-class button {
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .create-join-class input {
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            background-color: #333;
+            color: white;
+            margin-right: 10px;
+            width: 200px;
+        }
+
+        .class-list {
+            margin-top: 20px;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .class-list h4 {
+            color: rgb(173, 139, 207);
+            margin-bottom: 10px;
+        }
+
+        .class-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .class-list li {
+            padding: 10px;
+            border-bottom: 1px solid rgba(192, 192, 192, 0.2);
+        }
+
+        .collapsible {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            padding: 18px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 18px;
+            border-radius: 5px;
+        }
+
+        .active,
+        .collapsible:hover {
+            background-color: #388e3c;
+        }
+
+        .collapsible:after {
+            content: '\002B';
+            color: white;
+            font-weight: bold;
+            float: right;
+            margin-left: 5px;
+        }
+
+        .active:after {
+            content: '\2212';
+        }
+
+        .content {
+            padding: 0 18px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background-color: #222;
+            color: white;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .content p {
+            margin-bottom: 10px;
+        }
+
+        .total-expenses {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #333;
+            border-radius: 7px;
+            color: white;
+            font-size: large;
+            text-align: center;
+        }
+
+        .expenses-preview {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #2a2a2a;
+            border-radius: 7px;
+            color: white;
+        }
+
+        .expenses-preview h3 {
+            color: rgb(139, 207, 207);
+            margin-bottom: 10px;
+        }
+
+        .expenses-preview table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .expenses-preview th,
+        .expenses-preview td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #444;
+        }
+
+        .expenses-preview th {
+            background-color: #333;
+        }
+        .join-class-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #222;
+            border-radius: 7px;
+            color: white;
+        }
+
+        .join-class-section h4 {
+            color: rgb(139, 207, 207);
+            margin-bottom: 10px;
+        }
+
+        .join-class-section input {
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            background-color: #333;
+            color: white;
+            margin-right: 10px;
+            width: 200px;
+        }
+
+        .join-class-section button {
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        .create-class-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #222;
+            border-radius: 7px;
+            color: white;
+        }
+
+        .create-class-section h4 {
+            color: rgb(139, 207, 207);
+            margin-bottom: 10px;
+        }
+
+        .create-class-section button {
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
     </style>
 </head>
 <body>
@@ -134,60 +397,154 @@
             </center>
         </div>
         <div class="right-side">
-            <center><h2>Your Expenses</h2></center>
-            <br><br><br>
-            
-            <form action="/expenses/add" method="POST" class="form-row">
-                <input type="text" name="productName" placeholder="Product" required>
-                <input type="text" name="category" placeholder="Category" required>
-                <input type="date" name="date" required>
-                <input type="number" step="0.01" name="amount" placeholder="Amount" required>
-                <button type="submit">Add</button>
-            </form>
-            <br>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Product Name</th>
-                        <th>Category</th>
-                        <th>Date</th>
-                        <th>Amount (₹)</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% if (expenses.length > 0) { %>
-                        <% expenses.forEach(expense => { %>
-                            <tr>
-                                <form action="/expenses/edit/<%= expense.id %>" method="POST">
-                                    <td><%= expense.id %></td>
-                                    <td><input type="text" name="productName" value="<%= expense.productName %>" required></td>
-                                    <td><input type="text" name="category" value="<%= expense.category %>" required></td>
-                                    <td><input type="date" name="date" value="<%= expense.date %>" required></td>
-                                    <td><input type="number" step="0.01" name="amount" value="<%= expense.amount %>" required></td>
-                                    <td>
-                                        <button type="submit">Update</button>
-                                </form>
-                                <form action="/expenses/delete/<%= expense.id %>" method="POST" style="display:inline;">
-                                    <button type="submit" class="delete-btn">Delete</button>
-                                </form>
-                                    </td>
-                            </tr>
-                        <% }) %>
-                    <% } else { %>
+            <button class="collapsible">Personal Expenses</button>
+            <div class="content">
+                <center><h2>Your Expenses</h2></center>
+                <br><br><br>
+                <form action="/expenses/add" method="POST" class="form-row">
+                    <input type="text" name="productName" placeholder="Product" required>
+                    <input type="text" name="category" placeholder="Category" required>
+                    <input type="date" name="date" required>
+                    <input type="number" step="0.01" name="amount" placeholder="Amount" required>
+                    <button type="submit">Add Personal Expense</button>
+                </form>
+                <br>
+                <table>
+                    <thead>
                         <tr>
-                            <td colspan="6" style="text-align: center;">No expenses found.</td>
+                            <th>ID</th>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Date</th>
+                            <th>Amount (₹)</th>
+                            <th>Actions</th>
                         </tr>
+                    </thead>
+                    <tbody>
+                        <% if (expenses.length > 0) { %>
+                            <% expenses.forEach(expense => { %>
+                                <tr>
+                                    <form action="/expenses/edit/<%= expense.id %>" method="POST">
+                                        <td><%= expense.id %></td>
+                                        <td><input type="text" name="productName" value="<%= expense.productName %>" required></td>
+                                        <td><input type="text" name="category" value="<%= expense.category %>" required></td>
+                                        <td><input type="date" name="date" value="<%= expense.date %>" required></td>
+                                        <td><input type="number" step="0.01" name="amount" value="<%= expense.amount %>" required></td>
+                                        <td>
+                                            <button type="submit">Update</button>
+                                    </form>
+                                    <form action="/expenses/delete/<%= expense.id %>" method="POST" style="display:inline;">
+                                        <button type="submit" class="delete-btn">Delete</button>
+                                    </form>
+                                        </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="6" style="text-align: center;">No expenses found.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+
+            <button class="collapsible">Shared Expenses</button>
+            <div class="content">
+                <div class="shared-expenses-container">
+                    <div class="join-class-section">
+                        <h4>Join a Class</h4>
+                        <form action="/join-class" method="POST">
+                            <input type="text" name="classId" placeholder="Paste the Class Link/ID">
+                            <button type="submit">Join Class</button>
+                        </form>
+                    </div>
+
+                    <div class="create-class-section">
+                        <h4>Create a New Class</h4>
+                        <form action="/create-class" method="POST">
+                            <button type="submit">Create New Class and Get Link</button>
+                        </form>
+                    </div>
+
+                    <% if (locals.sharedExpenses && locals.sharedExpenses.length > 0) { %>
+                        <div class="existing-shared-expenses">
+                            <h4>Existing Shared Expenses:</h4>
+                            <% locals.sharedExpenses.forEach(expense => { %>
+                                <div class="shared-expense-item">
+                                    <span><%= expense.productName %>: <%= expense.amount %> (<%= expense.category %>) - Added by: <%= expense.addedBy %> (Class: <%= expense.className %>)</span>
+                                    <div class="shared-expense-actions">
+                                        <form action="/expenses/delete/<%= expense.id %>" method="POST" style="display:inline;">
+                                            <button type="submit" class="delete-btn">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
                     <% } %>
-                </tbody>
-            </table>
-             
-            <div style="text-align: center; margin-top: 20px; color: white; font-size: large;">
-                <p>Total This Month: ₹<%= totalMonthly.toFixed(2) %></p>
+                </div>
+            </div>
+            <div class="expenses-preview">
+                <h3>Expenses Overview</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Date</th>
+                            <th>Amount (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (expenses.length > 0) { %>
+                            <% expenses.forEach(expense => { %>
+                                <tr>
+                                    <td>Personal</td>
+                                    <td><%= expense.productName %></td>
+                                    <td><%= expense.category %></td>
+                                    <td><%= expense.date %></td>
+                                    <td><%= expense.amount %></td>
+                                </tr>
+                            <% }) %>
+                        <% } %>
+                        <% if (locals.sharedExpenses && locals.sharedExpenses.length > 0) { %>
+                            <% locals.sharedExpenses.forEach(expense => { %>
+                                <tr>
+                                    <td>Shared</td>
+                                    <td><%= expense.productName %></td>
+                                    <td><%= expense.category %></td>
+                                    <td><%= expense.date %></td>
+                                    <td><%= expense.amount %></td>
+                                </tr>
+                            <% }) %>
+                        <% } else if (expenses.length === 0 && (!locals.sharedExpenses || locals.sharedExpenses.length === 0)) { %>
+                            <tr>
+                                <td colspan="5" style="text-align: center;">No expenses found.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+            <div class = "total-expenses">
+                 <p>Total Expenses: ₹<%= (totalMonthly + (typeof totalShared !== 'undefined' ? totalShared : 0)).toFixed(2) %></p>
             </div>
         </div>
     </div>
+    <script>
+        var coll = document.getElementsByClassName("collapsible");
+        var i;
+
+        for (i = 0; i < coll.length; i++) {
+            coll[i].addEventListener("click", function() {
+                this.classList.toggle("active");
+                var content = this.nextElementSibling;
+                if (content.style.maxHeight) {
+                    content.style.maxHeight = null;
+                } else {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
+            });
+        }
+    </script>
 </body>
 </html>
