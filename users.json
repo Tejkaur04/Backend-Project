@@ -66,7 +66,8 @@
         "af932fd7-636a-4e5f-a555-3e55b9260627",
         "42905a84-d735-467e-8668-e98e0ea9e8d7",
         "4e37585d-b129-4c3a-afd8-932d187e24f3",
-        "cac158ca-2231-41a7-8cfa-3b81e7068855"
+        "cac158ca-2231-41a7-8cfa-3b81e7068855",
+        "4d70d7c8-eebd-46d6-8bfb-ac94d1ec1295"
       ]
     },
     {
@@ -75,13 +76,6 @@
       "password": "password",
       "expenses": [
         {
-          "id": 2,
-          "productName": "Cold Coffee",
-          "category": "Food",
-          "date": "2025-04-12",
-          "amount": 150.02
-        },
-        {
           "id": 3,
           "productName": "maggi",
           "category": "Food",
@@ -89,40 +83,11 @@
           "amount": 50
         },
         {
-          "id": 4,
-          "productName": "dress",
-          "category": "clothing",
-          "date": "2025-04-02",
-          "amount": 1500
-        },
-        {
-          "id": 5,
-          "productName": "stapler",
-          "category": "stationary",
-          "date": "2025-04-03",
-          "amount": 90
-        },
-        {
           "id": 6,
           "productName": "book",
           "category": "stationary",
           "date": "2025-04-15",
           "amount": 150
-        },
-        {
-          "id": 7,
-          "productName": "milk",
-          "category": "Food",
-          "date": "2025-04-16",
-          "amount": 30
-        },
-        {
-          "id": 1747231066299,
-          "productName": "hiiii",
-          "category": "food",
-          "date": "2025-05-14",
-          "amount": 80,
-          "addedBy": "Tejinder"
         }
       ],
       "joinedClasses": [
@@ -132,8 +97,30 @@
         "af932fd7-636a-4e5f-a555-3e55b9260627",
         "42905a84-d735-467e-8668-e98e0ea9e8d7",
         "4e37585d-b129-4c3a-afd8-932d187e24f3",
-        "cac158ca-2231-41a7-8cfa-3b81e7068855"
+        "cac158ca-2231-41a7-8cfa-3b81e7068855",
+        "4d70d7c8-eebd-46d6-8bfb-ac94d1ec1295"
       ]
+    },
+    {
+      "username": "user1",
+      "email": "user1@gmail.com",
+      "password": "123",
+      "expenses": [],
+      "joinedClasses": []
+    },
+    {
+      "username": "user2",
+      "email": "user2@gmail.com",
+      "password": "123",
+      "expenses": [],
+      "joinedClasses": []
+    },
+    {
+      "username": "user3",
+      "email": "user3@gmail.com",
+      "password": "123",
+      "expenses": [],
+      "joinedClasses": []
     }
   ],
   "classes": {
@@ -179,16 +166,7 @@
         "Tejinder",
         "aaina Kaushik"
       ],
-      "expenses": [
-        {
-          "id": 1747235576555,
-          "productName": "speaker",
-          "category": "entertainment",
-          "date": "2025-05-14",
-          "amount": 5000,
-          "addedBy": "aaina Kaushik"
-        }
-      ],
+      "expenses": [],
       "className": "Class-5",
       "classId": "af932fd7-636a-4e5f-a555-3e55b9260627"
     },
@@ -236,19 +214,18 @@
         "aaina Kaushik",
         "Testing"
       ],
-      "expenses": [
-        {
-          "id": 1747240802725,
-          "productName": "water colours",
-          "category": "stationary",
-          "date": "2025-05-08",
-          "amount": 140,
-          "addedBy": "Tejinder",
-          "sharedAmount": 140
-        }
-      ],
+      "expenses": [],
       "className": "Class-8",
       "classId": "cac158ca-2231-41a7-8cfa-3b81e7068855"
+    },
+    "4d70d7c8-eebd-46d6-8bfb-ac94d1ec1295": {
+      "members": [
+        "Tejinder",
+        "aaina Kaushik"
+      ],
+      "expenses": [],
+      "className": "Class-9",
+      "classId": "4d70d7c8-eebd-46d6-8bfb-ac94d1ec1295"
     }
   }
 }
