@@ -1,43 +1,43 @@
 {
   "routes": [
     { "source": "/",
-      "destination": "/" 
+      "destination": "/",
     },
     {
       "source": "/signup",
-      "destination": "/signup" 
+      "destination": "/signup", 
     },
     {
       "source": "/home",
-      "destination": "/home" 
+      "destination": "/home",
     },
     {
       "source": "/expenses/add",
-      "destination": "/expenses/add"
+      "destination": "/expenses/add",
     },
      {
       "source": "/expenses/delete/:id",
-      "destination": "/expenses/delete/:id" 
+      "destination": "/expenses/delete/:id", 
     }, 
     {
       "source": "/expenses/edit/:id",
-      "destination": "/expenses/edit/:id" 
+      "destination": "/expenses/edit/:id", 
     }, 
     {
       "source": "/create-class",
-      "destination":"/create-class" 
+      "destination":"/create-class", 
     }, 
     {
       "source": "/join-class",
-      "destination": "/join-class"  
+      "destination": "/join-class",  
     }, 
     {
       "source": "/logout",
-      "destination": "/"
+      "destination": "/",
     },
      {
       "source": "/*",
-      "destination": "/*"
+      "destination": "/*",
     },
       
   ]
